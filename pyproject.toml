@@ -1,0 +1,68 @@
+[dependency-groups]
+dev = [
+    "pyright>=1.1.394",
+    "ruff>=0.9.6",
+]
+
+
+[project]
+name = "sbmod"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "praw>=7.8.1",
+]
+
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+ignore = [
+  "D203", # 1 blank line required before class docstring
+  "D213", # Multi-line docstring summary should start at the second line
+  "E501", # line-length
+  "S101", # use of assert
+]
+select = [
+  "A", # flake8-builtins
+  "ANN", # flake8-annotations
+  "ARG", # flake8-unused-arguments
+  "B", # flake8-bugbear
+  "BLE", # flake8-blind-except
+  "C4", # flake8-comprehensions
+  "D", # pydocstyle
+  "DTZ", # flake8-datetimez
+  "E", # pycodestyle errors
+  "EM", # flake8-errmsg
+  "ERA", # eradicate
+  "EXE", # flake8-executable
+  "F", # pyflakes
+  "FA", # flake8-future-annotations
+  "FIX", # flake8-fix me
+  "FLY", # flynt
+  "G", # flake8-logging-format
+  "I", # isort
+  "INP", # flake8-no-pep420
+  "ISC", # flake8-implicit-str-concat
+  "N", # pep8-naming
+  "PIE", # flake8-pie
+  "PGH", # pygrep-hooks
+  "PL", # Pylint
+  "PT", # flake8-pytest-style
+  "PTH", # flake8-use-pathlib
+  "PYI", # flake8-pyi
+  "Q", # flake8-quotes
+  "RET", # flake8-return
+  "RSE", # flake8-raise
+  "S", # bandit
+  "SIM", # flake8-simplify
+  "T10", # flake8-debugger
+  "T20", # flake8-print
+  "TCH", # flake8-type-checking
+  "TD", # flake8-todos
+  "W", # pycodestyle warnings
+  "UP" # pyupgrade
+]
