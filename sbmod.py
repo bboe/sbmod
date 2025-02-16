@@ -2,20 +2,25 @@
 
 import argparse
 import logging
+import pprint
 import sys
 import time
+import traceback
 from collections import Counter
 from datetime import datetime, timedelta
+from typing import cast
 from zoneinfo import ZoneInfo
 
 import prawcore
 from praw import Reddit
-from praw.models import Comment, Redditor, Subreddit
+from praw.models import Comment, Message, Redditor, Subreddit
 
 logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 BOT = "sbmodbot"
+EXCEPTION_SLEEP_TIME = 60
+EXCEPTION_USER = "bboe"
 FAILED_VERIFICATION_CONVERSATION_ID = "2i4snm"
 SUBREDDIT = "santabarbara"
 SUBREDDITS_TO_SHOW = 10
@@ -158,22 +163,49 @@ class Verification:
         return self._verified
 
 
-def handle_modmail(*, reddit: Reddit, subreddit: Subreddit) -> None:
+def handle_message(*, message: Message, moderators: list[Redditor], reddit: Reddit, subreddit: Subreddit) -> None:
+    """Process a single inbox message."""
+    if message.author not in moderators:
+        log.info("ignoring message from non-moderator user %s", message.author)
+        return
+
+    subject = message.subject.strip()
+    if subject != "verify":
+        message.reply(f"`{subject}` is not a valid command. Try `verify`.")
+        return
+
+    body = message.body.strip()
+    if len(body.split()) != 1:
+        message.reply("Message body must contain only a username")
+
+    for prefix in ("u/", "/u/"):
+        if body.lower().startswith(prefix):
+            body = body[len(prefix) :]
+
+    message.reply(f"processing {body} ...")
+    process_redditor(redditor=reddit.redditor(body), subreddit=subreddit)
+
+
+def handle_messages(*, reddit: Reddit, subreddit: Subreddit) -> None:
     """Loop through all mod-specific conversations for actions."""
-    for conversation in subreddit.modmail.conversations(state="mod", limit=None):
-        if conversation.subject != "verify" or BOT in conversation.authors:
+    moderators = list(subreddit.moderator())
+
+    for item in reddit.inbox.stream():
+        if item.was_comment:  # ignore comments
+            item.mark_read()
             continue
 
-        assert conversation.is_internal, "is not internal"
-        assert conversation.state in (0, 1), f"state is not in (0, 1) {conversation.state}"
+        try:
+            handle_message(message=cast(Message, item), moderators=moderators, reddit=reddit, subreddit=subreddit)
+        except Exception:
+            item_info = pprint.pformat(vars(item), indent=4)
+            log.exception("Exception processing the following item:\n%s", item_info)
 
-        message = conversation.messages[0]
-        username = message.body_markdown
-        redditor = reddit.redditor(username)
-        verification = Verification(redditor=redditor, subreddit=subreddit)
-        verification.verify()
-        report = verification.report()
-        conversation.reply(body=report)
+            message = f"Exception\n{traceback.format_exc()}\nItem:\n{item_info}".replace("\n", "\n\n")
+            reddit.redditor(EXCEPTION_USER).message(message=message, subject=f"{USER_AGENT} exception")
+            time.sleep(EXCEPTION_SLEEP_TIME)  # Let's slow things down if there are issues
+            continue
+        item.mark_read()
 
 
 def main() -> int:
@@ -182,32 +214,47 @@ def main() -> int:
     subreddit = reddit.subreddit(SUBREDDIT)
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--report", metavar="redditor", help="Run report against a single user")
-    parser.add_argument("--watch", action="store_true", help="Monitor modmail for requests")
+    parser.add_argument("--run", action="store_true", help="Monitor messages for requests")
+    parser.add_argument("--verify", metavar="redditor", help="Verify a single user")
     arguments = parser.parse_args()
 
-    if arguments.report:
-        redditor = reddit.redditor(arguments.report)
-        verification = Verification(redditor=redditor, subreddit=subreddit)
-        result = verification.verify()
-        print(report := verification.report())
-        if result:
-            subreddit.contributor.add(redditor)
-            for conversation in subreddit.modmail.conversations(state="all", limit=None):
-                if redditor in conversation.authors and BOT in conversation.authors and conversation.num_messages == 1:
-                    conversation.reply(body=report, internal=True)
-        else:
-            subreddit.modmail(FAILED_VERIFICATION_CONVERSATION_ID).reply(body=report)
+    if arguments.verify:
+        result, report = process_redditor(redditor=reddit.redditor(arguments.verify), subreddit=subreddit)
+        print(report)
         return 0 if result else 1
 
-    if arguments.watch:
-        while True:
-            try:
-                handle_modmail(reddit=reddit, subreddit=subreddit)
-            except Exception:
-                log.exception("handle modmail failed")
-            time.sleep(60)
+    if arguments.run:
+        run(reddit=reddit, subreddit=subreddit)
     return 0
+
+
+def process_redditor(*, redditor: Redditor, subreddit: Subreddit) -> tuple[bool, str]:
+    """Run the verification for a single Redditor."""
+    verification = Verification(redditor=redditor, subreddit=subreddit)
+    result = verification.verify()
+    report = verification.report()
+    if result:
+        subreddit.contributor.add(redditor)
+        for conversation in subreddit.modmail.conversations(state="all", limit=None):
+            if redditor in conversation.authors and BOT in conversation.authors and conversation.num_messages == 1:
+                conversation.reply(body=report, internal=True)
+    else:
+        subreddit.modmail(FAILED_VERIFICATION_CONVERSATION_ID).reply(body=report)
+    return result, report
+
+
+def run(*, reddit: Reddit, subreddit: Subreddit) -> None:
+    """Primary loop when started with --run."""
+    running = True
+    while running:
+        try:
+            handle_messages(reddit=reddit, subreddit=subreddit)
+        except KeyboardInterrupt:
+            running = False
+        except prawcore.exceptions.PrawcoreException:
+            log.exception("PrawcoreException in run. Sleeping for %d seconds.", EXCEPTION_SLEEP_TIME)
+            time.sleep(EXCEPTION_SLEEP_TIME)
+    log.info("%s stopped gracefully", USER_AGENT)
 
 
 if __name__ == "__main__":
