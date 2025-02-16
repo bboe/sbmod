@@ -19,6 +19,7 @@ BOT = "sbmodbot"
 SUBREDDIT = "santabarbara"
 SUBREDDITS_TO_SHOW = 10
 TIMEZONE = ZoneInfo("America/Los_Angeles")
+USER_AGENT = "SBModTool by u/bboe v0.1.0"
 
 DATES = {
     "created": datetime.now(tz=TIMEZONE) - timedelta(days=14),
@@ -176,7 +177,7 @@ def handle_modmail(*, reddit: Reddit, subreddit: Subreddit) -> None:
 
 def main() -> int:
     """Entrypoint to the program."""
-    reddit = Reddit("sbmod", user_agent="SBModTool by u/bboe v0.0.1")
+    reddit = Reddit("sbmod", user_agent=USER_AGENT)
     subreddit = reddit.subreddit(SUBREDDIT)
 
     parser = argparse.ArgumentParser()
@@ -185,11 +186,18 @@ def main() -> int:
     arguments = parser.parse_args()
 
     if arguments.report:
-        verification = Verification(redditor=reddit.redditor(arguments.report), subreddit=subreddit)
+        redditor = reddit.redditor(arguments.report)
+        verification = Verification(redditor=redditor, subreddit=subreddit)
         result = verification.verify()
-        print(verification.report())
+        print(report := verification.report())
+        if result:
+            subreddit.contributor.add(redditor)
+            for conversation in subreddit.modmail.conversations(state="all", limit=None):
+                if redditor in conversation.authors and BOT in conversation.authors and conversation.num_messages == 1:
+                    conversation.reply(body=report, internal=True)
         return 0 if result else 1
-    elif arguments.watch:
+
+    if arguments.watch:
         while True:
             try:
                 handle_modmail(reddit=reddit, subreddit=subreddit)
