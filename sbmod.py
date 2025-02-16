@@ -16,6 +16,7 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 BOT = "sbmodbot"
+FAILED_VERIFICATION_CONVERSATION_ID = "2i4snm"
 SUBREDDIT = "santabarbara"
 SUBREDDITS_TO_SHOW = 10
 TIMEZONE = ZoneInfo("America/Los_Angeles")
@@ -195,6 +196,8 @@ def main() -> int:
             for conversation in subreddit.modmail.conversations(state="all", limit=None):
                 if redditor in conversation.authors and BOT in conversation.authors and conversation.num_messages == 1:
                     conversation.reply(body=report, internal=True)
+        else:
+            subreddit.modmail(FAILED_VERIFICATION_CONVERSATION_ID).reply(body=report)
         return 0 if result else 1
 
     if arguments.watch:
