@@ -1,23 +1,35 @@
 [dependency-groups]
 dev = [
+    "tox-uv>=1.23.2",
+]
+test = [
+    "coverage>=7.6.12",
     "pyright>=1.1.394",
+    "pytest>=8.3.4",
     "ruff>=0.9.6",
 ]
 
 
 [project]
-name = "sbmod"
-version = "0.1.0"
-description = "Add your description here"
-readme = "README.md"
-requires-python = ">=3.11"
+description = "Tool to assist in the moderation of r/SantaBarbara"
 dependencies = [
     "praw>=7.8.1",
+]
+name = "sbmod"
+readme = "README.md"
+requires-python = ">=3.11"
+version = "0.1.0"
+
+
+[tool.pyright]
+executionEnvironments = [
+  { extraPaths = [""], root = "tests", reportArgumentType = "none" },
 ]
 
 
 [tool.ruff]
 line-length = 120
+
 
 [tool.ruff.lint]
 ignore = [
@@ -25,6 +37,7 @@ ignore = [
   "D213", # Multi-line docstring summary should start at the second line
   "E501", # line-length
   "S101", # use of assert
+  "T201", # use of print
 ]
 select = [
   "A", # flake8-builtins
@@ -66,3 +79,49 @@ select = [
   "W", # pycodestyle warnings
   "UP" # pyupgrade
 ]
+
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**.py" = ["D", "INP"]
+
+
+[tool.tox]
+envlist = ["py311", "lint", "type"]
+minversion = "4.22"
+
+
+[tool.tox.env_run_base]
+commands = [
+    ["coverage", "run", "-m", "pytest", "{posargs}"],
+    ["coverage", "report", "-m", "--fail-under=88"]
+]
+description = "Run test under {base_python}"
+dependency_groups = ["test"]
+runner = "uv-venv-lock-runner"
+
+
+[tool.tox.env.lint]
+commands = [
+    ["ruff", "check"],
+    ["ruff", "format", "--diff", "--target-version", "py311"],
+]
+description = "run lint check on code base"
+dependency_groups = ["test"]
+runner = "uv-venv-lock-runner"
+
+
+[tool.tox.env.stylefix]
+commands = [
+    ["ruff", "check", "--fix"],
+    ["ruff", "format", "--target-version", "py311"],
+]
+description = "run lint check on code base"
+dependency_groups = ["test"]
+runner = "uv-venv-lock-runner"
+
+
+[tool.tox.env.type]
+commands = [["pyright"]]
+dependency_groups = ["test"]
+description = "run type check on code base"
+runner = "uv-venv-lock-runner"
