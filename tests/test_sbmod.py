@@ -2,7 +2,8 @@ from unittest.mock import MagicMock, Mock, PropertyMock
 
 from prawcore.exceptions import NotFound
 
-from sbmod import DATES, SUBREDDIT, Verification, _d
+from sbmod.constants import SUBREDDIT
+from sbmod.verification import DATES, Verification, _d
 
 
 def create_mock_comment(*, created: float = 1700000000, score: int = 1, subreddit: Mock) -> Mock:

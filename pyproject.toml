@@ -1,3 +1,8 @@
+[build-system]
+build-backend = "hatchling.build"
+requires = ["hatchling"]
+
+
 [dependency-groups]
 dev = [
     "tox-uv>=1.23.2",
@@ -11,14 +16,21 @@ test = [
 
 
 [project]
-description = "Tool to assist in the moderation of r/SantaBarbara"
 dependencies = [
     "praw>=7.8.1",
 ]
+dynamic = ["version", "description"]
 name = "sbmod"
 readme = "README.md"
 requires-python = ">=3.13"
-version = "0.1.0"
+
+
+[project.scripts]
+sbmod = "sbmod:main"
+
+
+[tool.hatch.version]
+path = "sbmod/constants.py"
 
 
 [tool.pyright]
@@ -125,3 +137,6 @@ commands = [["pyright"]]
 dependency_groups = ["test"]
 description = "run type check on code base"
 runner = "uv-venv-lock-runner"
+
+[tool.uv]
+package = true
