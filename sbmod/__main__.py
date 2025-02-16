@@ -7,7 +7,7 @@ import sys
 from sbmod.bot import Bot
 from sbmod.utilities import list_active_redditors, process_redditor, process_redditors_from_list
 
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s %(message)s", level=logging.INFO)
 log = logging.getLogger(__package__)
 
 

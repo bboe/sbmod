@@ -1,9 +1,7 @@
 """Provides functions that facilitate actions."""
 
-import json
 import logging
 from collections import Counter
-from pathlib import Path
 from typing import TextIO
 
 from praw import Reddit
@@ -11,9 +9,35 @@ from praw.exceptions import RedditAPIException
 from praw.models import Redditor, Subreddit
 
 from sbmod.constants import BOT, FAILED_VERIFICATION_CONVERSATION_ID
+from sbmod.models import AddContributorTask, db_session
 from sbmod.verification import Verification
 
 log = logging.getLogger(__package__)
+
+
+def add_contributor(
+    *, redditor: Redditor, report: str, save_to_db_on_failure: bool = True, subreddit: Subreddit
+) -> bool:
+    """Add a contributor to the subreddit."""
+    try:
+        subreddit.contributor.add(redditor)
+    except RedditAPIException as exception:
+        if exception.items[0].error_type == "SUBREDDIT_RATELIMIT":
+            log.warning("add_contributor hit rate limit")
+            if not save_to_db_on_failure:
+                return False
+
+            with db_session() as session:
+                session.add(AddContributorTask(report=report, username=redditor.name))
+            return False
+        raise
+    for conversation in subreddit.modmail.conversations(state="all", limit=None):
+        if redditor in conversation.authors and BOT in conversation.authors and conversation.num_messages == 1:
+            conversation.reply(body=report, internal=True)
+            break
+    else:
+        log.warning("Failed to locate add contributor message for %s:\n%s", redditor, report)
+    return True
 
 
 def list_active_redditors(*, subreddit: Subreddit) -> None:
@@ -37,18 +61,7 @@ def process_redditor(*, redditor: Redditor, subreddit: Subreddit) -> tuple[bool,
     result = verification.verify()
     report = verification.report()
     if result:
-        try:
-            subreddit.contributor.add(redditor)
-        except RedditAPIException as exception:
-            if exception.items[0].error_type == "SUBREDDIT_RATELIMIT":
-                data = {"contributor": str(redditor), "report": report}
-                with Path(f"contributor_{redditor}.json").open("w") as fp:
-                    json.dump(data, fp)
-                return result, report
-        for conversation in subreddit.modmail.conversations(state="all", limit=None):
-            if redditor in conversation.authors and BOT in conversation.authors and conversation.num_messages == 1:
-                conversation.reply(body=report, internal=True)
-                break
+        add_contributor(redditor=redditor, report=report, subreddit=subreddit)
     else:
         subreddit.modmail(FAILED_VERIFICATION_CONVERSATION_ID).reply(body=report)
     return result, report

@@ -1,7 +1,9 @@
 """Provide constants for the package."""
 
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
+DB_PATH = Path.home() / ".config" / "sbmod.db"
 BOT = "sbmodbot"
 EXCEPTION_SLEEP_TIME = 60
 EXCEPTION_USER = "bboe"

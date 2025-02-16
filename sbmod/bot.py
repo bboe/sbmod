@@ -11,7 +11,8 @@ from praw.models import Message, Redditor
 from prawcore.exceptions import PrawcoreException
 
 from sbmod.constants import EXCEPTION_SLEEP_TIME, EXCEPTION_USER, SUBREDDIT, USER_AGENT
-from sbmod.utilities import process_redditor
+from sbmod.models import AddContributorTask, Base, db_session
+from sbmod.utilities import add_contributor, process_redditor
 
 log = logging.getLogger(__package__)
 
@@ -34,13 +35,16 @@ class Bot:
         self._exception_user = self.reddit.redditor(EXCEPTION_USER)
         self.subreddit = self.reddit.subreddit(SUBREDDIT)
 
+        with db_session() as session:
+            Base.metadata.create_all(session.get_bind())
+
     def _run_loop(self) -> None:
         """Loop through actions, either queued, or user-input."""
         log.info("Waiting for inbox messages")
 
         for item in self.reddit.inbox.stream(pause_after=4):
             if item is None:
-                self.handle_queued_task()
+                self.handle_queued_tasks(limit=20)
                 continue
 
             if item.was_comment:  # ignore comments
@@ -85,9 +89,24 @@ class Bot:
         message.reply(f"processing {body} ...")
         process_redditor(redditor=self.reddit.redditor(body), subreddit=self.subreddit)
 
-    def handle_queued_task(self) -> None:
-        """Run a single queued task if one exists."""
-        log.info("There are no queued tasks.")
+    def handle_queued_tasks(self, *, limit: int = 4) -> None:
+        """Run up to limit queued tasks they exist."""
+        for _ in range(limit):
+            with db_session() as session:
+                if (task := AddContributorTask.next_task(session=session)) is None:
+                    log.info("There are no queued tasks.")
+                    return
+
+                log.info("Attempting to add %s from saved task", task.username)
+                if add_contributor(
+                    redditor=self.reddit.redditor(task.username),
+                    report=task.report,
+                    save_to_db_on_failure=False,
+                    subreddit=self.subreddit,
+                ):
+                    session.delete(task)
+                else:
+                    break
 
     def run(self) -> None:
         """Provide the primary bot loop."""
