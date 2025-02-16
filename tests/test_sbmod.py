@@ -52,6 +52,7 @@ def test_verification__is_not_found() -> None:
     mock_redditor = create_mock_redditor(is_not_found=True, name="notfound")
     mock_subreddit = create_mock_subreddit()
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
     assert (
         verification.report()
         == "u/notfound: verification fail\n\nAccount is not found. No history information available."
@@ -62,6 +63,7 @@ def test_verification__is_suspended() -> None:
     mock_redditor = create_mock_redditor(is_suspended=True, name="suspended")
     mock_subreddit = create_mock_subreddit()
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
     assert (
         verification.report()
         == "u/suspended: verification fail\n\nAccount is suspended. No history information available."
@@ -72,6 +74,7 @@ def test_verification__is_too_new() -> None:
     mock_redditor = create_mock_redditor(created=DATES["created"].timestamp() + 0.001, name="toonew")
     mock_subreddit = create_mock_subreddit()
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
     assert (
         verification.report()
         == f"u/toonew: verification fail\n\nAccount was created too recently ({_d(mock_redditor.created_utc)}). Skipped history collection."
@@ -82,6 +85,7 @@ def test_verification__has_ban() -> None:
     mock_redditor = create_mock_redditor(name="hasban")
     mock_subreddit = create_mock_subreddit(notes=[create_mock_note()])
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
     assert verification.report() == "u/hasban: verification fail\n\nAccount has 1 ban(s). Skipped history collection."
 
 
@@ -89,6 +93,7 @@ def test_verification__has_bans() -> None:
     mock_redditor = create_mock_redditor(name="hasbans")
     mock_subreddit = create_mock_subreddit(notes=[create_mock_note(), create_mock_note()])
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
     assert verification.report() == "u/hasbans: verification fail\n\nAccount has 2 ban(s). Skipped history collection."
 
 
@@ -96,6 +101,7 @@ def test_verification__has_mutes() -> None:
     mock_redditor = create_mock_redditor(name="hasmutes")
     mock_subreddit = create_mock_subreddit(notes=[create_mock_note(type_="MUTE"), create_mock_note(type_="MUTE")])
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
     assert (
         verification.report() == "u/hasmutes: verification fail\n\nAccount has 2 mute(s). Skipped history collection."
     )
@@ -105,6 +111,7 @@ def test_verification__has_no_history() -> None:
     mock_redditor = create_mock_redditor(name="nohistory")
     mock_subreddit = create_mock_subreddit()
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
     assert verification.report() == "u/nohistory: verification fail\n\nAccount has no r/santabarbara history."
 
 
@@ -114,6 +121,7 @@ def test_verification__insufficient_karma__lower_bound() -> None:
         comments=[create_mock_comment(created=DATES["history"].timestamp() + 1, score=0, subreddit=mock_subreddit)]
     )
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
     assert verification.report() == "u/redditor: verification fail\n\nAccount too low of karma average"
 
 
@@ -123,6 +131,7 @@ def test_verification__insufficient_karma__upper_bound() -> None:
         comments=[create_mock_comment(created=DATES["positive_karma"].timestamp(), score=0, subreddit=mock_subreddit)]
     )
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
     assert verification.report() == "u/redditor: verification fail\n\nAccount too low of karma average"
 
 
@@ -132,6 +141,7 @@ def test_verification__oldest_comment_too_recent() -> None:
         comments=[create_mock_comment(created=DATES["positive_karma"].timestamp() + 1, subreddit=mock_subreddit)]
     )
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
     assert (
         verification.report()
         == "u/redditor: verification fail\n\nAccount oldest r/santabarbara comment is too recent (2025-01-20 00:00:01-08:00)"
@@ -147,6 +157,7 @@ def test_verification__pass_with_low_karma() -> None:
         ]
     )
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert verification.verify()
     assert (
         verification.report()
         == f"""                    User: redditor
@@ -183,6 +194,7 @@ def test_verification__pass_with_many_subreddits() -> None:
         ]
     )
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert verification.verify()
     assert (
         verification.report()
         == f"""                    User: redditor
@@ -222,6 +234,7 @@ def test_verification__pass_with_mod_notes() -> None:
         comments=[create_mock_comment(created=DATES["history"].timestamp(), score=0, subreddit=mock_subreddit)]
     )
     verification = Verification(redditor=mock_redditor, subreddit=mock_subreddit)
+    assert verification.verify()
     assert (
         verification.report()
         == f"""                    User: redditor

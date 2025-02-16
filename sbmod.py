@@ -38,6 +38,7 @@ class Verification:
         """Store information about this particular Verification."""
         self._redditor = redditor
         self._subreddit = subreddit
+        self._verified: bool | None = None
         self.comments: list[Comment] = []
         self.error: str | None = None
         self.found_comments = 0
@@ -50,16 +51,6 @@ class Verification:
     def created(self) -> datetime:
         """Return the datetime the ``Redditor`` was created."""
         return _d(self._redditor.created_utc)
-
-    def _process(self) -> bool:
-        """Validate the redditor."""
-        self._redditor_status()
-        if self.error is not None:
-            return False
-
-        if not self._process_notes():
-            return False
-        return self._process_comments()
 
     def _process_comments(self) -> bool:
         """Fetch as many comments for the redditor and save some information."""
@@ -118,7 +109,10 @@ class Verification:
 
     def report(self) -> str:
         """Return a report that is reddit markdown formatted."""
-        if self._process():
+        if self._verified is None:
+            message = "verify hasn't been called yet"
+            raise TypeError(message)
+        if self._verified:
             return self.results()
         return f"u/{self._redditor.name}: verification fail\n\nAccount {self.error}"
 
@@ -152,6 +146,15 @@ class Verification:
             lines.append(f"{note_type:>14} count: {count}")
         return "\n".join(f"    {line}" if line else "" for line in lines)
 
+    def verify(self) -> bool:
+        """Validate the redditor."""
+        self._redditor_status()
+        if self.error is not None or not self._process_notes():
+            self._verified = False
+        else:
+            self._verified = self._process_comments()
+        return self._verified
+
 
 def handle_modmail(*, reddit: Reddit, subreddit: Subreddit) -> None:
     """Loop through all mod-specific conversations for actions."""
@@ -166,6 +169,7 @@ def handle_modmail(*, reddit: Reddit, subreddit: Subreddit) -> None:
         username = message.body_markdown
         redditor = reddit.redditor(username)
         verification = Verification(redditor=redditor, subreddit=subreddit)
+        verification.verify()
         report = verification.report()
         conversation.reply(body=report)
 
@@ -182,7 +186,9 @@ def main() -> int:
 
     if arguments.report:
         verification = Verification(redditor=reddit.redditor(arguments.report), subreddit=subreddit)
+        result = verification.verify()
         print(verification.report())
+        return 0 if result else 1
     elif arguments.watch:
         while True:
             try:
