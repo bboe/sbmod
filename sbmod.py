@@ -264,7 +264,7 @@ def process_redditor(*, redditor: Redditor, subreddit: Subreddit) -> tuple[bool,
         try:
             subreddit.contributor.add(redditor)
         except RedditAPIException as exception:
-            if exception.error_type == "SUBREDDIT_RATELIMIT":
+            if exception.items[0].error_type == "SUBREDDIT_RATELIMIT":
                 data = {"contributor": str(redditor), "report": report}
                 with Path(f"contributor_{redditor}.json").open("w") as fp:
                     json.dump(data, fp)
