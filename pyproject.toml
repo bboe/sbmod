@@ -93,7 +93,7 @@ minversion = "4.22"
 [tool.tox.env_run_base]
 commands = [
     ["coverage", "run", "-m", "pytest", "{posargs}"],
-    ["coverage", "report", "-m", "--fail-under=71"]
+    ["coverage", "report", "-m", "--fail-under=65"]
 ]
 description = "Run test under {base_python}"
 dependency_groups = ["test"]

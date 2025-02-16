@@ -1,6 +1,7 @@
 """Moderation tool to help moderate r/SantaBarbara."""
 
 import argparse
+import json
 import logging
 import pprint
 import sys
@@ -8,11 +9,13 @@ import time
 import traceback
 from collections import Counter
 from datetime import datetime, timedelta
+from pathlib import Path
 from typing import TextIO, cast
 from zoneinfo import ZoneInfo
 
 import prawcore
 from praw import Reddit
+from praw.exceptions import RedditAPIException
 from praw.models import Comment, Message, Redditor, Subreddit
 
 logging.basicConfig(level=logging.INFO)
@@ -239,14 +242,13 @@ def main() -> int:
         list_active_redditors(subreddit=subreddit)
         return 0
 
-    if arguments.from_list:
-        process_redditors_from_list(fp=sys.stdin, reddit=reddit, subreddit=subreddit)
-        return 0
-
     if arguments.verify:
         result, report = process_redditor(redditor=reddit.redditor(arguments.verify), subreddit=subreddit)
         print(report)
         return 0 if result else 1
+
+    if arguments.from_list:
+        process_redditors_from_list(fp=sys.stdin, reddit=reddit, subreddit=subreddit)
 
     if arguments.run:
         run(reddit=reddit, subreddit=subreddit)
@@ -259,10 +261,18 @@ def process_redditor(*, redditor: Redditor, subreddit: Subreddit) -> tuple[bool,
     result = verification.verify()
     report = verification.report()
     if result:
-        subreddit.contributor.add(redditor)
+        try:
+            subreddit.contributor.add(redditor)
+        except RedditAPIException as exception:
+            if exception.error_type == "SUBREDDIT_RATELIMIT":
+                data = {"contributor": str(redditor), "report": report}
+                with Path(f"contributor_{redditor}.json").open("w") as fp:
+                    json.dump(data, fp)
+                return result, report
         for conversation in subreddit.modmail.conversations(state="all", limit=None):
             if redditor in conversation.authors and BOT in conversation.authors and conversation.num_messages == 1:
                 conversation.reply(body=report, internal=True)
+                break
     else:
         subreddit.modmail(FAILED_VERIFICATION_CONVERSATION_ID).reply(body=report)
     return result, report
