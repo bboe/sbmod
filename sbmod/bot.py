@@ -21,10 +21,15 @@ class Bot:
     """Bot that encompasses most of the work."""
 
     @property
+    def contributors(self) -> list[Redditor]:
+        """Return list of Redditors who are approved."""
+        return list(self.subreddit.contributor(limit=None))
+
+    @property
     def moderators(self) -> list[Redditor]:
         """Return list of Redditors who are moderators."""
         if self._moderators is None:
-            self._moderators = list(self.subreddit.moderator())
+            self._moderators = list(self.subreddit.moderator(limit=None))
         return self._moderators
 
     def __init__(self) -> None:

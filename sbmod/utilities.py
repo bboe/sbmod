@@ -1,5 +1,6 @@
 """Provides functions that facilitate actions."""
 
+import json
 import logging
 import math
 from collections import Counter
@@ -55,6 +56,26 @@ def list_active_redditors(*, subreddit: Subreddit) -> None:
         for comment in comments:
             redditors[comment.author] += 1
     print(redditors.most_common(None))
+
+
+def list_redditors_with_admin_removed_items(*, subreddit: Subreddit) -> None:
+    """Output a list of redditors who have had submissions or comments removed by Reddit."""
+    redditors = Counter()
+
+    log.info("fetching anti-evil moderator log")
+    for entry in subreddit.mod.log(limit=None, mod="a"):
+        assert entry.action in ("removecomment", "removelink"), f"Unexpected entry action {entry.action}"
+        redditors[entry.target_author] += 100
+
+    log.info("fetching reddit moderator log")
+    for entry in subreddit.mod.log(limit=None, mod="reddit"):
+        if entry.action in ("addmoderator", "marknsfw", "unmuteuser"):  # Ignored actions
+            continue
+        assert entry.action in ("removecomment", "removelink"), f"Unexpected entry action {entry.action}"
+        redditors[entry.target_author] += 1
+
+    for redditor, count in sorted(redditors.items(), key=lambda x: (-x[1], x[0])):
+        print(json.dumps({"count": count, "username": redditor}))
 
 
 def process_redditor(*, redditor: Redditor, subreddit: Subreddit) -> tuple[bool, str]:

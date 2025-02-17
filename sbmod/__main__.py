@@ -5,7 +5,12 @@ import logging
 import sys
 
 from sbmod.bot import Bot
-from sbmod.utilities import list_active_redditors, process_redditor, process_redditors_from_list
+from sbmod.utilities import (
+    list_active_redditors,
+    list_redditors_with_admin_removed_items,
+    process_redditor,
+    process_redditors_from_list,
+)
 
 log = logging.getLogger(__package__)
 
@@ -20,6 +25,10 @@ def main() -> int:
     """Provide the entrypoint to the program."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--active", action="store_true", help="Obtain list of recently active users")
+    parser.add_argument(
+        "--admin", action="store_true", help="Obtain list of users who have had items removed by Reddit"
+    )
+    parser.add_argument("--contributors", action="store_true", help="Obtain list of users who are contributors")
     parser.add_argument("--debug", action="store_true", help="Turn on verbose logging")
     parser.add_argument("--from-list", action="store_true", help="Add contributors from stdin")
     parser.add_argument("--verify", metavar="redditor", help="Verify a single user")
@@ -31,6 +40,15 @@ def main() -> int:
 
     if arguments.active:
         list_active_redditors(subreddit=bot.subreddit)
+        return 0
+
+    if arguments.admin:
+        list_redditors_with_admin_removed_items(subreddit=bot.subreddit)
+        return 0
+
+    if arguments.contributors:
+        for contributor in bot.contributors:
+            print(contributor)
         return 0
 
     if arguments.verify:
