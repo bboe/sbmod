@@ -7,17 +7,25 @@ import sys
 from sbmod.bot import Bot
 from sbmod.utilities import list_active_redditors, process_redditor, process_redditors_from_list
 
-logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s %(message)s", level=logging.INFO)
 log = logging.getLogger(__package__)
+
+
+def setup_logging(*, debug: bool) -> None:
+    """Prepare logging."""
+    level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s %(message)s", level=level)
 
 
 def main() -> int:
     """Provide the entrypoint to the program."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--active", action="store_true", help="Obtain list of recently active users")
+    parser.add_argument("--debug", action="store_true", help="Turn on verbose logging")
     parser.add_argument("--from-list", action="store_true", help="Add contributors from stdin")
     parser.add_argument("--verify", metavar="redditor", help="Verify a single user")
     arguments = parser.parse_args()
+
+    setup_logging(debug=arguments.debug)
 
     bot = Bot()
 

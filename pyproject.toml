@@ -99,7 +99,7 @@ select = [
 
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**.py" = ["D", "INP"]
+"tests/**.py" = ["D", "INP", "PLR2004"]
 
 
 [tool.tox]

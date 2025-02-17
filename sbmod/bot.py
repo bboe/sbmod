@@ -12,7 +12,7 @@ from prawcore.exceptions import PrawcoreException
 
 from sbmod.constants import EXCEPTION_SLEEP_TIME, EXCEPTION_USER, SUBREDDIT, USER_AGENT
 from sbmod.models import AddContributorTask, Base, db_session
-from sbmod.utilities import add_contributor, process_redditor
+from sbmod.utilities import add_contributor, process_redditor, seconds_to_next_hour
 
 log = logging.getLogger(__package__)
 
@@ -31,6 +31,7 @@ class Bot:
         """Initialize variables needed throughout the various Bot actions."""
         self._moderators = None
         self._running = True
+        self._next_task_times = {"AddContributorTask": 0}
         self.reddit = Reddit("sbmod", user_agent=USER_AGENT)
         self._exception_user = self.reddit.redditor(EXCEPTION_USER)
         self.subreddit = self.reddit.subreddit(SUBREDDIT)
@@ -91,6 +92,9 @@ class Bot:
 
     def handle_queued_tasks(self, *, limit: int = 4) -> None:
         """Run up to limit queued tasks they exist."""
+        if self._next_task_times["AddContributorTask"] > time.monotonic():
+            return
+
         for _ in range(limit):
             with db_session() as session:
                 if (task := AddContributorTask.next_task(session=session)) is None:
@@ -106,6 +110,8 @@ class Bot:
                 ):
                     session.delete(task)
                 else:
+                    self._next_task_times["AddContributorTask"] = time.monotonic() + (seconds := seconds_to_next_hour())
+                    log.info("Next add contributor attempt in %d seconds", seconds)
                     break
 
     def run(self) -> None:

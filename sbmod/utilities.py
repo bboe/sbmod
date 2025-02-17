@@ -1,7 +1,9 @@
 """Provides functions that facilitate actions."""
 
 import logging
+import math
 from collections import Counter
+from datetime import UTC, datetime, timedelta
 from typing import TextIO
 
 from praw import Reddit
@@ -81,3 +83,10 @@ def process_redditors_from_list(*, fp: TextIO, reddit: Reddit, subreddit: Subred
             continue
 
         process_redditor(redditor=redditor, subreddit=subreddit)
+
+
+def seconds_to_next_hour() -> int:
+    """Return the number of seconds to the next hour."""
+    now = datetime.now(tz=UTC)
+    next_hour = (now + timedelta(hours=1)).replace(microsecond=0, minute=0, second=0)
+    return int(math.ceil((next_hour - now).total_seconds()))
