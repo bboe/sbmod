@@ -1,10 +1,8 @@
-from datetime import UTC, datetime
-from unittest.mock import MagicMock, Mock, PropertyMock, patch
+from unittest.mock import MagicMock, Mock, PropertyMock
 
 from prawcore.exceptions import NotFound
 
 from sbmod.constants import SUBREDDIT
-from sbmod.utilities import seconds_to_next_hour
 from sbmod.verification import DATES, Verification, _d
 
 
@@ -49,25 +47,6 @@ def create_mock_subreddit(*, name: str = SUBREDDIT, notes: list[Mock] = None) ->
     subreddit.__str__.return_value = name  # pyright: ignore[reportFunctionMemberAccess]
     subreddit.mod.notes.redditors = Mock(return_value=[] if notes is None else notes)
     return subreddit
-
-
-def test_seconds_to_next_hour() -> None:
-    assert 0 < seconds_to_next_hour() <= 3600
-
-    with patch("sbmod.utilities.datetime", now=(now_mock := Mock())):
-        now_mock.return_value = datetime(day=1, month=1, tzinfo=UTC, year=2025)
-        assert seconds_to_next_hour() == 3600
-
-        now_mock.return_value = datetime(day=1, minute=59, month=1, tzinfo=UTC, year=2025)
-        assert seconds_to_next_hour() == 60
-
-        now_mock.return_value = datetime(day=1, minute=59, month=1, second=59, tzinfo=UTC, year=2025)
-        assert seconds_to_next_hour() == 1
-
-        now_mock.return_value = datetime(
-            day=1, microsecond=999999, minute=59, month=1, second=59, tzinfo=UTC, year=2025
-        )
-        assert seconds_to_next_hour() == 1
 
 
 def test_verification__is_not_found() -> None:

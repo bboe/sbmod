@@ -31,7 +31,7 @@ class Bot:
         """Initialize variables needed throughout the various Bot actions."""
         self._moderators = None
         self._running = True
-        self._next_task_times = {"AddContributorTask": 0}
+        self._next_task_times: dict[str, float] = {"AddContributorTask": 0}
         self.reddit = Reddit("sbmod", user_agent=USER_AGENT)
         self._exception_user = self.reddit.redditor(EXCEPTION_USER)
         self.subreddit = self.reddit.subreddit(SUBREDDIT)
@@ -98,7 +98,7 @@ class Bot:
         for _ in range(limit):
             with db_session() as session:
                 if (task := AddContributorTask.next_task(session=session)) is None:
-                    log.info("There are no queued tasks.")
+                    log.debug("There are no queued tasks.")
                     return
 
                 log.info("Attempting to add %s from saved task", task.username)

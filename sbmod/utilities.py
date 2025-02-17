@@ -38,7 +38,7 @@ def add_contributor(
             conversation.reply(body=report, internal=True)
             break
     else:
-        log.warning("Failed to locate add contributor message for %s:\n%s", redditor, report)
+        log.warning("Failed to locate add contributor message for %s:\n%s", redditor.name, report)
     return True
 
 

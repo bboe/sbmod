@@ -35,9 +35,9 @@ class AddContributorTask(Base):
 
 
 @contextmanager
-def db_session() -> Iterator[Session]:
+def db_session(engine_url: str = f"sqlite:///{DB_PATH}") -> Iterator[Session]:
     """Provide access to the sqlite database."""
-    engine = create_engine(f"sqlite:///{DB_PATH}")
+    engine = create_engine(engine_url)
     session = Session(engine, autobegin=False)
     try:
         session.begin()
