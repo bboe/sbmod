@@ -16,6 +16,10 @@ test = [
 
 
 [project]
+authors = [
+    { name = "Bryce Boe", email = "bbzbryce@gmail.com" }
+]
+classifiers = ["Private :: Do Not Upload"]
 dependencies = [
     "praw>=7.8.1",
     "sqlalchemy>=2.0.38",
@@ -27,7 +31,7 @@ requires-python = ">=3.13"
 
 
 [project.scripts]
-sbmod = "sbmod:main"
+sbmod = "sbmod.__main__:main"
 
 
 [tool.hatch.version]
@@ -138,6 +142,3 @@ commands = [["pyright"]]
 dependency_groups = ["test"]
 description = "run type check on code base"
 runner = "uv-venv-lock-runner"
-
-[tool.uv]
-package = true
