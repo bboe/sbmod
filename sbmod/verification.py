@@ -21,9 +21,9 @@ def _d(timestamp: float, /) -> datetime:
 class Verification:
     """Analyze and provide report on a redditor's activity history."""
 
-    def __init__(self, *, redditor: Redditor, subreddit: Subreddit) -> None:
+    def __init__(self, *, marker: datetime | None = None, redditor: Redditor, subreddit: Subreddit) -> None:
         """Store information about this particular Verification."""
-        self._marker = datetime.now(tz=TIMEZONE) - OLDEST_COMMENT_MARKER
+        self._marker = datetime.now(tz=TIMEZONE) - OLDEST_COMMENT_MARKER if marker is None else marker
         self._redditor = redditor
         self._subreddit = subreddit
         self._verified: bool | None = None
