@@ -9,11 +9,8 @@ from prawcore.exceptions import NotFound
 
 from sbmod.constants import SUBREDDITS_TO_SHOW, TIMEZONE
 
-DATES = {
-    "created": datetime.now(tz=TIMEZONE) - timedelta(days=14),
-    "history": datetime(year=2024, month=11, day=5, tzinfo=TIMEZONE),
-    "positive_karma": datetime(year=2025, month=1, day=20, tzinfo=TIMEZONE),
-}
+OLDEST_COMMENT_MARKER = timedelta(days=182)  # account's oldest subreddit comment must be at least 182 days old
+
 log = logging.getLogger(__package__)
 
 
@@ -26,6 +23,7 @@ class Verification:
 
     def __init__(self, *, redditor: Redditor, subreddit: Subreddit) -> None:
         """Store information about this particular Verification."""
+        self._marker = datetime.now(tz=TIMEZONE) - OLDEST_COMMENT_MARKER
         self._redditor = redditor
         self._subreddit = subreddit
         self._verified: bool | None = None
@@ -58,14 +56,14 @@ class Verification:
             return False
 
         oldest_comment_date = _d(self.comments[0].created_utc)
-        if oldest_comment_date > DATES["positive_karma"]:
+        if oldest_comment_date > self._marker:
             self.error = f"oldest r/{self._subreddit} comment is too recent ({oldest_comment_date})"
             return False
 
         self.karma = sum(comment.score for comment in self.comments)
         self.karma_average = self.karma / len(self.comments)
 
-        if oldest_comment_date > DATES["history"] and self.karma_average < 1:
+        if self.karma_average < 1:
             self.error = "too low of karma average"
             return False
         return True
@@ -93,7 +91,7 @@ class Verification:
             self.error = "is suspended. No history information available."
             return
 
-        if self.created > DATES["created"]:
+        if self.created > self._marker:
             self.error = f"was created too recently ({self.created}). Skipped history collection."
             return
 
