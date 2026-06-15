@@ -4,15 +4,17 @@ import logging
 import pprint
 import time
 import traceback
-from typing import cast
+from typing import TYPE_CHECKING, cast
 
 from praw import Reddit
-from praw.models import Message, Redditor
 from prawcore.exceptions import PrawcoreException
 
 from sbmod.constants import EXCEPTION_SLEEP_TIME, EXCEPTION_USER, SUBREDDIT, USER_AGENT
 from sbmod.models import AddContributorTask, Base, db_session
 from sbmod.utilities import add_contributor, process_redditor, seconds_to_next_hour
+
+if TYPE_CHECKING:
+    from praw.models import Message, Redditor
 
 log = logging.getLogger(__package__)
 
@@ -58,7 +60,7 @@ class Bot:
                 continue
 
             try:
-                self.handle_message(message=cast(Message, item))
+                self.handle_message(message=cast("Message", item))
             except Exception:
                 item_info = pprint.pformat(vars(item), indent=4)
                 log.exception("Exception processing the following item:\n%s", item_info)

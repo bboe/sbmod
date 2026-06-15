@@ -5,6 +5,7 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.6.0",
     "tox-uv>=1.23.2",
 ]
 test = [
@@ -27,7 +28,7 @@ dependencies = [
 dynamic = ["version", "description"]
 name = "sbmod"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 
 
 [project.scripts]
@@ -103,7 +104,7 @@ select = [
 
 
 [tool.tox]
-envlist = ["py313", "lint", "type"]
+envlist = ["py314", "lint", "type"]
 minversion = "4.22"
 
 
@@ -120,7 +121,7 @@ runner = "uv-venv-lock-runner"
 [tool.tox.env.lint]
 commands = [
     ["ruff", "check"],
-    ["ruff", "format", "--diff", "--target-version", "py313"],
+    ["ruff", "format", "--diff", "--target-version", "py314"],
 ]
 description = "run lint check on code base"
 dependency_groups = ["test"]
@@ -130,7 +131,7 @@ runner = "uv-venv-lock-runner"
 [tool.tox.env.stylefix]
 commands = [
     ["ruff", "check", "--fix"],
-    ["ruff", "format", "--target-version", "py313"],
+    ["ruff", "format", "--target-version", "py314"],
 ]
 description = "run lint check on code base"
 dependency_groups = ["test"]

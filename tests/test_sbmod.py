@@ -52,39 +52,6 @@ def create_mock_subreddit(*, name: str = SUBREDDIT, notes: list[Mock] = None) ->
     return subreddit
 
 
-def test_verification__is_not_found() -> None:
-    mock_redditor = create_mock_redditor(is_not_found=True, name="notfound")
-    mock_subreddit = create_mock_subreddit()
-    verification = Verification(marker=MARKER, redditor=mock_redditor, subreddit=mock_subreddit)
-    assert not verification.verify()
-    assert (
-        verification.report()
-        == "u/notfound: verification fail\n\nAccount is not found. No history information available."
-    )
-
-
-def test_verification__is_suspended() -> None:
-    mock_redditor = create_mock_redditor(is_suspended=True, name="suspended")
-    mock_subreddit = create_mock_subreddit()
-    verification = Verification(marker=MARKER, redditor=mock_redditor, subreddit=mock_subreddit)
-    assert not verification.verify()
-    assert (
-        verification.report()
-        == "u/suspended: verification fail\n\nAccount is suspended. No history information available."
-    )
-
-
-def test_verification__is_too_new() -> None:
-    mock_redditor = create_mock_redditor(created=MARKER.timestamp() + 0.001, name="toonew")
-    mock_subreddit = create_mock_subreddit()
-    verification = Verification(marker=MARKER, redditor=mock_redditor, subreddit=mock_subreddit)
-    assert not verification.verify()
-    assert (
-        verification.report()
-        == f"u/toonew: verification fail\n\nAccount was created too recently ({_d(mock_redditor.created_utc)}). Skipped history collection."
-    )
-
-
 def test_verification__has_ban() -> None:
     mock_redditor = create_mock_redditor(name="hasban")
     mock_subreddit = create_mock_subreddit(notes=[create_mock_note()])
@@ -129,6 +96,39 @@ def test_verification__insufficient_karma() -> None:
     assert verification.report() == "u/redditor: verification fail\n\nAccount too low of karma average"
 
 
+def test_verification__is_not_found() -> None:
+    mock_redditor = create_mock_redditor(is_not_found=True, name="notfound")
+    mock_subreddit = create_mock_subreddit()
+    verification = Verification(marker=MARKER, redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
+    assert (
+        verification.report()
+        == "u/notfound: verification fail\n\nAccount is not found. No history information available."
+    )
+
+
+def test_verification__is_suspended() -> None:
+    mock_redditor = create_mock_redditor(is_suspended=True, name="suspended")
+    mock_subreddit = create_mock_subreddit()
+    verification = Verification(marker=MARKER, redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
+    assert (
+        verification.report()
+        == "u/suspended: verification fail\n\nAccount is suspended. No history information available."
+    )
+
+
+def test_verification__is_too_new() -> None:
+    mock_redditor = create_mock_redditor(created=MARKER.timestamp() + 0.001, name="toonew")
+    mock_subreddit = create_mock_subreddit()
+    verification = Verification(marker=MARKER, redditor=mock_redditor, subreddit=mock_subreddit)
+    assert not verification.verify()
+    assert (
+        verification.report()
+        == f"u/toonew: verification fail\n\nAccount was created too recently ({_d(mock_redditor.created_utc)}). Skipped history collection."
+    )
+
+
 def test_verification__oldest_comment_too_recent() -> None:
     mock_subreddit = create_mock_subreddit()
     mock_redditor = create_mock_redditor(
@@ -147,16 +147,16 @@ def test_verification__pass_with_many_subreddits() -> None:
     mock_redditor = create_mock_redditor(
         comments=[
             create_mock_comment(created=MARKER.timestamp(), subreddit=mock_subreddit),
-            create_mock_comment(subreddit="a", score=0),
-            create_mock_comment(subreddit="b", score=0),
-            create_mock_comment(subreddit="c", score=0),
-            create_mock_comment(subreddit="d", score=0),
-            create_mock_comment(subreddit="e", score=0),
-            create_mock_comment(subreddit="f", score=0),
-            create_mock_comment(subreddit="g", score=0),
-            create_mock_comment(subreddit="h", score=0),
-            create_mock_comment(subreddit="i", score=0),
-            create_mock_comment(subreddit="j", score=0),
+            create_mock_comment(score=0, subreddit="a"),
+            create_mock_comment(score=0, subreddit="b"),
+            create_mock_comment(score=0, subreddit="c"),
+            create_mock_comment(score=0, subreddit="d"),
+            create_mock_comment(score=0, subreddit="e"),
+            create_mock_comment(score=0, subreddit="f"),
+            create_mock_comment(score=0, subreddit="g"),
+            create_mock_comment(score=0, subreddit="h"),
+            create_mock_comment(score=0, subreddit="i"),
+            create_mock_comment(score=0, subreddit="j"),
         ]
     )
     verification = Verification(marker=MARKER, redditor=mock_redditor, subreddit=mock_subreddit)

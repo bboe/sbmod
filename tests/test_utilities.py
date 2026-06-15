@@ -1,12 +1,16 @@
+from __future__ import annotations
+
 import logging
 from datetime import UTC, datetime
+from typing import TYPE_CHECKING
 from unittest.mock import Mock, patch
-
-import pytest
 
 from sbmod.constants import BOT
 from sbmod.utilities import add_contributor, seconds_to_next_hour
 from tests.test_sbmod import create_mock_redditor
+
+if TYPE_CHECKING:
+    import pytest
 
 
 def test_add_contributor__no_conversation(caplog: pytest.LogCaptureFixture) -> None:

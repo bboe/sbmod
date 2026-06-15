@@ -3,23 +3,27 @@
 import logging
 from collections import Counter
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
-from praw.models import Comment, Redditor, Subreddit
 from prawcore.exceptions import NotFound
 
 from sbmod.constants import SUBREDDITS_TO_SHOW, TIMEZONE
+
+if TYPE_CHECKING:
+    from praw.models import Comment, Redditor, Subreddit
 
 OLDEST_COMMENT_MARKER = timedelta(days=182)  # account's oldest subreddit comment must be at least 182 days old
 
 log = logging.getLogger(__package__)
 
 
-def _d(timestamp: float, /) -> datetime:
-    return datetime.fromtimestamp(timestamp, tz=TIMEZONE)
-
-
 class Verification:
     """Analyze and provide report on a redditor's activity history."""
+
+    @property
+    def created(self) -> datetime:
+        """Return the datetime the ``Redditor`` was created."""
+        return _d(self._redditor.created_utc)
 
     def __init__(self, *, marker: datetime | None = None, redditor: Redditor, subreddit: Subreddit) -> None:
         """Store information about this particular Verification."""
@@ -34,11 +38,6 @@ class Verification:
         self.karma_average: float | None = None
         self.note_types = Counter()
         self.subreddits: Counter[Subreddit] = Counter()
-
-    @property
-    def created(self) -> datetime:
-        """Return the datetime the ``Redditor`` was created."""
-        return _d(self._redditor.created_utc)
 
     def _process_comments(self) -> bool:
         """Fetch as many comments for the redditor and save some information."""
@@ -142,3 +141,7 @@ class Verification:
         else:
             self._verified = self._process_comments()
         return self._verified
+
+
+def _d(timestamp: float, /) -> datetime:
+    return datetime.fromtimestamp(timestamp, tz=TIMEZONE)
