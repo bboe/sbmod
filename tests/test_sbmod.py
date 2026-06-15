@@ -47,7 +47,7 @@ def create_mock_redditor(
 def create_mock_subreddit(*, name: str = SUBREDDIT, notes: list[Mock] = None) -> Mock:
     """Return an object like praw.models.Subreddit."""
     subreddit = MagicMock()
-    subreddit.__str__.return_value = name  # pyright: ignore[reportFunctionMemberAccess]
+    subreddit.__str__.return_value = name  # pyright: ignore[reportAttributeAccessIssue]
     subreddit.mod.notes.redditors = Mock(return_value=[] if notes is None else notes)
     return subreddit
 

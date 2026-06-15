@@ -1,11 +1,11 @@
 import pytest
-import sqlalchemy
+from sqlalchemy.exc import IntegrityError
 
 from sbmod.models import AddContributorTask, Base, db_session
 
 
 def test_add_contributor_task__duplicate_username() -> None:
-    with pytest.raises(sqlalchemy.exc.IntegrityError), db_session(engine_url="sqlite:///:memory:") as session:  # noqa: PT012
+    with pytest.raises(IntegrityError), db_session(engine_url="sqlite:///:memory:") as session:  # noqa: PT012
         Base.metadata.create_all(session.get_bind())
         session.add(AddContributorTask(report="Some report", username="user1"))
         session.add(AddContributorTask(report="Some report", username="user1"))
