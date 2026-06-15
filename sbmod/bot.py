@@ -31,7 +31,7 @@ class Bot:
     def moderators(self) -> list[Redditor]:
         """Return list of Redditors who are moderators."""
         if self._moderators is None:
-            self._moderators = list(self.subreddit.moderator(limit=None))
+            self._moderators = list(self.subreddit.moderator())
         return self._moderators
 
     def __init__(self) -> None:
