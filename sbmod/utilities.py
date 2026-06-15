@@ -34,7 +34,7 @@ def add_contributor(
                 session.add(AddContributorTask(report=report, username=redditor.name))
             return False
         raise
-    for conversation in subreddit.modmail.conversations(state="all", limit=None):
+    for conversation in subreddit.modmail.conversations(limit=None, state="all"):
         if redditor in conversation.authors and BOT in conversation.authors and conversation.num_messages == 1:
             conversation.reply(body=report, internal=True)
             break

@@ -58,7 +58,7 @@ class Bot:
                 continue
 
             try:
-                self.handle_message(message=cast(Message, item))
+                self.handle_message(message=cast("Message", item))
             except Exception:
                 item_info = pprint.pformat(vars(item), indent=4)
                 log.exception("Exception processing the following item:\n%s", item_info)

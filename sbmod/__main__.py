@@ -15,12 +15,6 @@ from sbmod.utilities import (
 log = logging.getLogger(__package__)
 
 
-def setup_logging(*, debug: bool) -> None:
-    """Prepare logging."""
-    level = logging.DEBUG if debug else logging.INFO
-    logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s %(message)s", level=level)
-
-
 def main() -> int:
     """Provide the entrypoint to the program."""
     parser = argparse.ArgumentParser()
@@ -31,7 +25,7 @@ def main() -> int:
     parser.add_argument("--contributors", action="store_true", help="Obtain list of users who are contributors")
     parser.add_argument("--debug", action="store_true", help="Turn on verbose logging")
     parser.add_argument("--from-list", action="store_true", help="Add contributors from stdin")
-    parser.add_argument("--verify", metavar="redditor", help="Verify a single user")
+    parser.add_argument("--verify", help="Verify a single user", metavar="redditor")
     arguments = parser.parse_args()
 
     setup_logging(debug=arguments.debug)
@@ -61,6 +55,12 @@ def main() -> int:
 
     bot.run()
     return 0
+
+
+def setup_logging(*, debug: bool) -> None:
+    """Prepare logging."""
+    level = logging.DEBUG if debug else logging.INFO
+    logging.basicConfig(format="%(asctime)s %(levelname)s %(name)s %(message)s", level=level)
 
 
 if __name__ == "__main__":
