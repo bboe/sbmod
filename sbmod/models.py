@@ -1,15 +1,17 @@
 """Define models that are backed by sqlite."""
 
 import datetime
-from collections.abc import Iterator
 from contextlib import contextmanager
-from typing import Annotated, Self
+from typing import TYPE_CHECKING, Annotated, Self
 
 from sqlalchemy import TIMESTAMP, create_engine
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 from sqlalchemy.sql import func
 
 from sbmod.constants import DB_PATH
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
 
 timestamp = Annotated[
     datetime.datetime, mapped_column(TIMESTAMP(timezone=True), nullable=False, server_default=func.CURRENT_TIMESTAMP())

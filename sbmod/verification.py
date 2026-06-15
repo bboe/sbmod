@@ -3,11 +3,14 @@
 import logging
 from collections import Counter
 from datetime import datetime, timedelta
+from typing import TYPE_CHECKING
 
-from praw.models import Comment, Redditor, Subreddit
 from prawcore.exceptions import NotFound
 
 from sbmod.constants import SUBREDDITS_TO_SHOW, TIMEZONE
+
+if TYPE_CHECKING:
+    from praw.models import Comment, Redditor, Subreddit
 
 OLDEST_COMMENT_MARKER = timedelta(days=182)  # account's oldest subreddit comment must be at least 182 days old
 

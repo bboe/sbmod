@@ -5,15 +5,17 @@ import logging
 import math
 from collections import Counter
 from datetime import UTC, datetime, timedelta
-from typing import TextIO
+from typing import TYPE_CHECKING, TextIO
 
-from praw import Reddit
 from praw.exceptions import RedditAPIException
-from praw.models import Redditor, Subreddit
 
 from sbmod.constants import BOT, FAILED_VERIFICATION_CONVERSATION_ID
 from sbmod.models import AddContributorTask, db_session
 from sbmod.verification import Verification
+
+if TYPE_CHECKING:
+    from praw import Reddit
+    from praw.models import Redditor, Subreddit
 
 log = logging.getLogger(__package__)
 
