@@ -5,6 +5,7 @@ requires = ["hatchling"]
 
 [dependency-groups]
 dev = [
+    "pre-commit>=4.6.0",
     "tox-uv>=1.23.2",
 ]
 test = [
